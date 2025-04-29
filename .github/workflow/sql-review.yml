@@ -1,0 +1,74 @@
+name: SQL review on pull request
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "migrations/*.sql"
+
+jobs:
+  check-release-on-test:
+    permissions:
+        pull-requests: write # write permission required to allow the action writes the check results to the comment.
+    runs-on: ubuntu-latest # use self-hosted machines if your Bytebase runs in internal networks.
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # set GITHUB_TOKEN because the 'Check release' step needs it to comment the pull request with check results.
+      BYTEBASE_URL: https://b0b2-160-30-128-222.ngrok-free.app
+      BYTEBASE_SERVICE_ACCOUNT: api-sample@service.bytebase.com
+      BYTEBASE_PROJECT: "projects/test-project"
+      BYTEBASE_TARGETS: "instances/daily-13306/databases/xxl_version"
+      FILE_PATTERN: "migrations/*.sql"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Login to Bytebase
+        id: login
+        uses: bytebase/login-action@v1
+        with:
+          bytebase-url: ${{ env.BYTEBASE_URL }}
+          service-key: ${{ env.BYTEBASE_SERVICE_ACCOUNT }}
+          service-secret: bbs_fbvezvyQV8iRSymgVBOb # Please use secrets for sensitive data in production.
+      - name: Check release
+        uses: bytebase/create-release-action@v1
+        with:
+          url: ${{ env.BYTEBASE_URL }}
+          token: ${{ steps.login.outputs.token }}
+          file-pattern: ${{ env.FILE_PATTERN }}
+          # fail the action if release checks report any error.
+          check-release: "FAIL_ON_ERROR"
+          project: ${{ env.BYTEBASE_PROJECT }}
+          targets: ${{ env.BYTEBASE_TARGETS }}
+          validate-only: true
+  check-release-on-prod:
+    permissions:
+        pull-requests: write # write permission required to allow the action writes the check results to the comment.
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # set GITHUB_TOKEN because the 'Check release' step needs it to comment the pull request with check results.
+      BYTEBASE_URL: https://b0b2-160-30-128-222.ngrok-free.app
+      BYTEBASE_SERVICE_ACCOUNT: api-sample@service.bytebase.com
+      BYTEBASE_PROJECT: "projects/test-project"
+      BYTEBASE_TARGETS: "instances/daily-13306/databases/xxl_version"
+      FILE_PATTERN: "migrations/*.sql"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Login to Bytebase
+        id: login
+        uses: bytebase/login-action@v1
+        with:
+          bytebase-url: ${{ env.BYTEBASE_URL }}
+          service-key: ${{ env.BYTEBASE_SERVICE_ACCOUNT }}
+          service-secret: bbs_fbvezvyQV8iRSymgVBOb # Please use secrets for sensitive data in production.
+      - name: Check release
+        uses: bytebase/create-release-action@v1
+        with:
+          url: ${{ env.BYTEBASE_URL }}
+          token: ${{ steps.login.outputs.token }}
+          file-pattern: ${{ env.FILE_PATTERN }}
+          # fail the action if release checks report any error.
+          check-release: "FAIL_ON_ERROR"
+          project: ${{ env.BYTEBASE_PROJECT }}
+          targets: ${{ env.BYTEBASE_TARGETS }}
+          validate-only: true
